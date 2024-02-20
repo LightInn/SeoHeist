@@ -1,0 +1,9 @@
+{
+  "name": "SeoHeist",
+  "version": "1.0.0",
+  "dependencies": {
+    "chatgpt": "^5.2.5",
+    "chatgpt-api": "^0.0.6",
+    "openai": "^4.28.0"
+  }
+}
