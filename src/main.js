@@ -1,13 +1,14 @@
 const OpenAI = require('openai')
+const {Article} = require('./Article')
+const PocketBase = require('pocketbase/cjs')
+const ProgressBar = require('console-progress-bar');
 
-
-const language = 'french'
 
 const openai = new OpenAI({
     apiKey: process.env['OPENAI_API_KEY'], // This is the default and can be omitted
-    // apiKey: "XXXXXX"
+    // apiKey: "xxxx"
 });
-
+const pb = new PocketBase('https://stickman-api.lightin.io');
 
 // 1 - Open CSV file
 
@@ -25,11 +26,20 @@ const openai = new OpenAI({
 
 // lets start with a predefined list of keywords
 
-var keywords = ["site maquillage professionnel"];
+const language = 'french'
+
+
+var keywords = ["stick duel medieval wars"];
 
 
 async function generateArticle(keyword) {
+
+    const progressBar = new ProgressBar({ maxValue: 5 });
+
+
     // 6 - genereate articles
+
+    progressBar.addValue(1);
 
 // - write a short and simple title for an article avout #keywords
 
@@ -40,6 +50,9 @@ async function generateArticle(keyword) {
         }],
         model: 'gpt-3.5-turbo',
     });
+
+    progressBar.addValue(1);
+
 
 
 // - write a metadata description for an article named #title. keep it under 150 characters
@@ -52,6 +65,7 @@ async function generateArticle(keyword) {
         model: 'gpt-3.5-turbo',
     });
 
+    progressBar.addValue(1);
 
 // - write an article about #title. subheadings should be in BBCode format. dont include the article title in the output
 
@@ -59,19 +73,22 @@ async function generateArticle(keyword) {
     const chatCompletion3 = await openai.chat.completions.create({
         messages: [{
             role: 'user',
-            content: "write an article about \"" + chatCompletion.choices[0].message.content + "\" that take in count the metadescription : \""+ chatCompletion2 +"\". subheadings should be in BBCode format. dont include the article title in the output. The output should be in " + language
+            content: "write an article about \"" + chatCompletion.choices[0].message.content + "\" that take in count the metadescription : \"" + chatCompletion2 + "\". subheadings should be in BBCode format. dont include the article title in the output. The output should be in " + language
         }],
         model: 'gpt-4-turbo-preview',
     });
 
 
+    progressBar.addValue(1);
 // - generate image from #title
 
     // voir avec midjourney pour les images
 
 // 7 - create Article with keywords, content, title, image, image-meta, meta-description. use keywords as slug and tags
 
-    const article = {
+    progressBar.addValue(1);
+
+    return {
         title: chatCompletion.choices[0].message.content,
         metaDescription: chatCompletion2.choices[0].message.content,
         content: chatCompletion3.choices[0].message.content,
@@ -79,21 +96,35 @@ async function generateArticle(keyword) {
         slug: keyword,
         tags: keyword
     }
-
-// 8 - write articles with API
-
-    console.log(article)
-
-
 }
 
-function main() {
+async function main() {
 
 
 // 9 - repeat for all keywords
     for (let keyword of keywords) {
 
-        generateArticle(keyword)
+
+        var article = await generateArticle(keyword)
+
+        console.log(article)
+
+
+
+
+        // 8 - save article to pocketbase or Strapi
+        // PocketBase
+
+        // example create data
+        const data = {
+            "title": article.title,
+            "content": article.content,
+            "describe": article.metaDescription,
+            "slug": article.slug,
+            "keywords": article.keywords,
+        };
+
+        const record = await pb.collection('blog').create(data);
 
 
     }
