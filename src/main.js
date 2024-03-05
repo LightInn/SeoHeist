@@ -32,6 +32,8 @@ var keywords = ["stick", "duel", "medieval", "wars", "french", "drawing", "digit
     "video", "2d", "3d", "stickman", "stickfigure", "nintendo", "youtube", "children", "kids", "funny", "fight", "ninja", "robot"];
 
 var usedKeywords = [];
+// funny,youtube,youtube,fight,2d,3d,animation,nintendo,stick,stickman,2d,stickman,ninja,video,children,stickfigure,french,fight,stick,drawing
+
 
 // function to pick 3 random keywords from the list, keywords should not be already picked together
 function pick3RandomKeywords(keywords) {
@@ -70,11 +72,9 @@ async function generateArticle(keyword) {
     const chatCompletion = await openai.chat.completions.create({
         messages: [{
             role: 'user',
-            content: "write a short and simple title for an article about \"" + keyword + "\". The output should be in " + language
+            content: "write a short and simple title for an article about \"" + keyword + "\". The title should be realistic, and may have occured in real life as an actual news. The output should be in " + language
         }], model: 'gpt-3.5-turbo',
     });
-
-    console.log(chatCompletion.choices[0].message.content);
 
     progressBar.addValue(1);
 
@@ -84,7 +84,7 @@ async function generateArticle(keyword) {
     const chatCompletion2 = await openai.chat.completions.create({
         messages: [{
             role: 'user',
-            content: "write a metadata description for an article named \"" + chatCompletion.choices[0].message.content + "\". keep it under 150 characters. The output should be in " + language
+            content: "write a metadata description for an article named \"" + chatCompletion.choices[0].message.content + "\". keep it under 150 characters. The title should be realistic, and may have occured in real life as an actual news. The output should be in " + language
         }], model: 'gpt-3.5-turbo',
     });
 
@@ -96,7 +96,7 @@ async function generateArticle(keyword) {
     const chatCompletion3 = await openai.chat.completions.create({
         messages: [{
             role: 'user',
-            content: "write an article about \"" + chatCompletion.choices[0].message.content + "\" that take in count the metadescription : \"" + chatCompletion2 + "\". the article should be in html rich text format. dont include the article title in the output. dont include the markdown code backtick, output the html directly. dont include the html doctype or the head section. The output should be in " + language
+            content: "write an article about \"" + chatCompletion.choices[0].message.content + "\" that take in count the metadescription : \"" + chatCompletion2 + "\". The title should be realistic, and may have occured in real life as an actual news. the article should be in html rich text format. dont include the article title in the output. dont include the markdown code backtick, output the html directly. dont include the html doctype or the head section. The output should be in " + language
         }], model: 'gpt-4-turbo-preview',
     });
 
@@ -108,11 +108,12 @@ async function generateArticle(keyword) {
 
     const response = await openai.images.generate({
         // model: "dall-e-3",
-        model: "dall-e-2",
+        model: "dall-e-3",
         // title = Image
-        prompt: chatCompletion.choices[0].message.content,
-        n: 1, // size: "1792x1024",
-        size: "256x256",
+        prompt: chatCompletion.choices[0].message.content + ", with a colorfull creative style for a blog post",
+        n: 1,
+        size: "1792x1024"
+        // size: "256x256",
     });
 
     image_url = response.data[0].url;
@@ -130,34 +131,41 @@ async function generateArticle(keyword) {
 }
 
 async function main() {
+    for (var i = 0; i < 10; i++) {
+        console.log("iteration : " + i + " / 10");
 
-    //pick random keywords
-    var keywordsChoosed = pick3RandomKeywords(keywords);
+        //pick random keywords
+        var keywordsChoosed = pick3RandomKeywords(keywords);
 
-    console.log(keywordsChoosed);
+        console.log(keywordsChoosed);
 
-    // concatene keywords
-    var keyword = keywordsChoosed.join(' ');
+        // concatene keywords
+        var keyword = keywordsChoosed.join(' ');
 
-    // 7 - generate article
-    var article = await generateArticle(keyword)
+        // 7 - generate article
+        var article = await generateArticle(keyword)
+        console.log(article.title);
 
-    // 8 - save article to pocketbase or Strapi
-    // PocketBase
+        // 8 - save article to pocketbase or Strapi
+        // PocketBase
 
-    const formData = new FormData();
-    formData.append('title', article.title);
-    formData.append('describe', article.metaDescription);
-    formData.append('content', article.content);
-    formData.append('url', article.title.replace(/[^a-zA-Z0-9]/g, '').replace(/\s+/g, '-').toLowerCase());
-    formData.append('image', article.image);
-    formData.append('tags', JSON.stringify(keywordsChoosed));
-    formData.append('publishedAt', new Date().toISOString());
+        const formData = new FormData();
+        formData.append('title', article.title);
+        formData.append('describe', article.metaDescription);
+        formData.append('content', article.content);
+        formData.append('url', article.title.replace(/[^a-zA-Z0-9]/g, '').replace(/\s+/g, '-').toLowerCase());
+        formData.append('image', article.image);
+        formData.append('tags', JSON.stringify(keywordsChoosed));
+        formData.append('publishedAt', new Date().toISOString());
 
-    const record = await pb.collection('blog').create(formData);
+        const record = await pb.collection('blog').create(formData);
+
+
+        console.log("used keywords : " + usedKeywords);
+    }
 }
 
-main();
+main()
 
 
 
