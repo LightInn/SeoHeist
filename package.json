@@ -1,6 +1,11 @@
 {
   "name": "SeoHeist",
   "version": "1.0.0",
+  "description": "A tool to generate SEO content",
+  "main": "src/main.js",
+  "scripts": {
+    "dev": "node src/main.js"
+  },
   "dependencies": {
     "chatgpt": "^5.2.5",
     "chatgpt-api": "^0.0.6",
